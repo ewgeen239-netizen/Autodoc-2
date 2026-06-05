@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { initTelegram, user } from "./lib/telegram";
 import { calc } from "./lib/calc";
-import Chart from "./components/Chart";
+import { theme } from "./ui/theme";
 
 export default function App() {
   const [peaks, setPeaks] = useState("");
@@ -39,44 +39,82 @@ export default function App() {
       ...c
     };
 
-    const { data } = await supabase
-      .from("shifts")
-      .insert([row])
-      .select();
-
+    const { data } = await supabase.from("shifts").insert([row]).select();
     if (data) setShifts([data[0], ...shifts]);
 
     setPeaks("");
     setHours("");
   }
 
-  const chartData = shifts.map(s => ({
-    date: s.shift_date,
-    pph: s.pph
-  }));
-
   const total = shifts.reduce((s, i) => s + i.bonus, 0);
+  const avgPph = shifts.reduce((s, i) => s + i.pph, 0) / (shifts.length || 1);
 
   return (
-    <div style={{ padding: 16, background: "#0f0f10", color: "#fff", minHeight: "100vh" }}>
-      <h2>OS Tracker SaaS</h2>
+    <div style={styles.app}>
 
-      <input placeholder="Пики" value={peaks} onChange={e => setPeaks(e.target.value)} />
-      <input placeholder="Часы" value={hours} onChange={e => setHours(e.target.value)} />
+      {/* HEADER */}
+      <div style={styles.header}>
+        <div>
+          <div style={styles.title}>Performance Dashboard</div>
+          <div style={styles.subtitle}>OS Tracker · Financial View</div>
+        </div>
 
-      <button onClick={add}>Добавить</button>
-
-      <div style={{ marginTop: 10 }}>
-        💰 Total: {total.toFixed(2)} zł
+        <div style={styles.badge}>
+          ID: {user?.id}
+        </div>
       </div>
 
-      {shifts.length > 0 && <Chart data={chartData} />}
+      {/* METRICS */}
+      <div style={styles.grid}>
+        <Card title="Total Profit" value={`${total.toFixed(2)} zł`} color={theme.profit} />
+        <Card title="Avg PPH" value={avgPph.toFixed(1)} color={theme.accent} />
+        <Card title="Shifts" value={shifts.length} color={theme.text} />
+      </div>
 
-      {shifts.map(s => (
-        <div key={s.id} style={{ marginTop: 8, background: "#1a1a1d", padding: 10 }}>
-          {s.peaks} / {s.hours}h → {s.pph.toFixed(1)} pph
-        </div>
-      ))}
+      {/* INPUT */}
+      <div style={styles.card}>
+        <input
+          style={styles.input}
+          placeholder="Peaks"
+          value={peaks}
+          onChange={e => setPeaks(e.target.value)}
+        />
+        <input
+          style={styles.input}
+          placeholder="Hours"
+          value={hours}
+          onChange={e => setHours(e.target.value)}
+        />
+
+        <button style={styles.button} onClick={add}>
+          Add Shift
+        </button>
+      </div>
+
+      {/* LIST */}
+      <div style={styles.list}>
+        {shifts.map(s => (
+          <div key={s.id} style={styles.item}>
+            <div>
+              <b>{s.peaks}</b> peaks · {s.hours}h
+            </div>
+
+            <div style={{ color: theme.muted, fontSize: 12 }}>
+              PPH {s.pph.toFixed(1)} · Bonus {s.bonus.toFixed(2)} zł
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* COMPONENT */
+function Card({ title, value, color }) {
+  return (
+    <div style={styles.metric}>
+      <div style={styles.metricTitle}>{title}</div>
+      <div style={{ ...styles.metricValue, color }}>{value}</div>
     </div>
   );
 }
