@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "./lib/supabase";
 import { initTelegram, user } from "./lib/telegram";
 import { calc } from "./lib/calc";
-import { theme } from "./ui/theme";
+import Chart from "./components/Chart";
+import { theme, styles } from "./ui/styles";
 
 export default function App() {
   const [peaks, setPeaks] = useState("");
@@ -46,8 +47,25 @@ export default function App() {
     setHours("");
   }
 
-  const total = shifts.reduce((s, i) => s + i.bonus, 0);
-  const avgPph = shifts.reduce((s, i) => s + i.pph, 0) / (shifts.length || 1);
+  /* 📊 METRICS ENGINE (level SaaS) */
+  const metrics = useMemo(() => {
+    const totalBonus = shifts.reduce((s, i) => s + (i.bonus || 0), 0);
+    const totalPeaks = shifts.reduce((s, i) => s + (i.peaks || 0), 0);
+    const totalHours = shifts.reduce((s, i) => s + (i.hours || 0), 0);
+    const avgPph = totalHours ? totalPeaks / totalHours : 0;
+
+    return { totalBonus, totalPeaks, totalHours, avgPph };
+  }, [shifts]);
+
+  /* 📈 CHART DATA */
+  const chartData = shifts
+    .slice()
+    .reverse()
+    .map(s => ({
+      date: s.shift_date,
+      pph: s.pph,
+      bonus: s.bonus
+    }));
 
   return (
     <div style={styles.app}>
@@ -55,30 +73,40 @@ export default function App() {
       {/* HEADER */}
       <div style={styles.header}>
         <div>
-          <div style={styles.title}>Performance Dashboard</div>
-          <div style={styles.subtitle}>OS Tracker · Financial View</div>
+          <div style={styles.title}>Performance SaaS</div>
+          <div style={styles.subtitle}>Fintech-grade OS Analytics</div>
         </div>
 
-        <div style={styles.badge}>
-          ID: {user?.id}
+        <div style={styles.userBox}>
+          ID: {user?.id || "guest"}
         </div>
       </div>
 
-      {/* METRICS */}
+      {/* KPI GRID */}
       <div style={styles.grid}>
-        <Card title="Total Profit" value={`${total.toFixed(2)} zł`} color={theme.profit} />
-        <Card title="Avg PPH" value={avgPph.toFixed(1)} color={theme.accent} />
-        <Card title="Shifts" value={shifts.length} color={theme.text} />
+        <Card label="Total Bonus" value={`${metrics.totalBonus.toFixed(2)} zł`} accent="green" />
+        <Card label="Avg PPH" value={metrics.avgPph.toFixed(1)} accent="blue" />
+        <Card label="Peaks" value={metrics.totalPeaks} accent="white" />
+        <Card label="Hours" value={metrics.totalHours.toFixed(1)} accent="white" />
+      </div>
+
+      {/* CHART */}
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>Performance Trend</div>
+        <Chart data={chartData} />
       </div>
 
       {/* INPUT */}
       <div style={styles.card}>
+        <div style={styles.cardTitle}>Add Shift</div>
+
         <input
           style={styles.input}
           placeholder="Peaks"
           value={peaks}
           onChange={e => setPeaks(e.target.value)}
         />
+
         <input
           style={styles.input}
           placeholder="Hours"
@@ -87,7 +115,7 @@ export default function App() {
         />
 
         <button style={styles.button} onClick={add}>
-          Add Shift
+          Save Shift
         </button>
       </div>
 
@@ -95,11 +123,11 @@ export default function App() {
       <div style={styles.list}>
         {shifts.map(s => (
           <div key={s.id} style={styles.item}>
-            <div>
+            <div style={styles.itemTop}>
               <b>{s.peaks}</b> peaks · {s.hours}h
             </div>
 
-            <div style={{ color: theme.muted, fontSize: 12 }}>
+            <div style={styles.itemBottom}>
               PPH {s.pph.toFixed(1)} · Bonus {s.bonus.toFixed(2)} zł
             </div>
           </div>
@@ -109,12 +137,25 @@ export default function App() {
   );
 }
 
-/* COMPONENT */
-function Card({ title, value, color }) {
+/* ================= COMPONENT ================= */
+
+function Card({ label, value, accent }) {
   return (
-    <div style={styles.metric}>
-      <div style={styles.metricTitle}>{title}</div>
-      <div style={{ ...styles.metricValue, color }}>{value}</div>
+    <div style={styles.kpi}>
+      <div style={styles.kpiLabel}>{label}</div>
+      <div
+        style={{
+          ...styles.kpiValue,
+          color:
+            accent === "green"
+              ? theme.green
+              : accent === "blue"
+              ? theme.blue
+              : theme.text
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
