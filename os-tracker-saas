@@ -1,0 +1,20 @@
+os-tracker-saas/
+│
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── lib/
+│       │   ├── calc.js
+│       │   ├── supabase.js
+│       │   ├── telegram.js
+│       │   └── analytics.js
+│       └── components/
+│           └── Chart.jsx
+│
+├── supabase/
+│   └── schema.sql
+│
+└── README.md
