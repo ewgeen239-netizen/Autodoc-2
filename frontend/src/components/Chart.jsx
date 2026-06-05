@@ -1,24 +1,32 @@
 import {
   LineChart,
   Line,
-  XAxis,
-  YAxis,
+  ResponsiveContainer,
   Tooltip,
-  ResponsiveContainer
+  XAxis,
+  YAxis
 } from "recharts";
 
 export default function Chart({ data }) {
   return (
-    <div style={{ background: "#1a1a1d", padding: 10, borderRadius: 10 }}>
-      <h4>📈 PPC/H</h4>
+    <div style={{ background: "#111826", padding: 12, borderRadius: 12 }}>
+      <div style={{ fontSize: 12, color: "#8B98A5", marginBottom: 10 }}>
+        Performance Trend
+      </div>
 
-      <div style={{ height: 200 }}>
+      <div style={{ height: 180 }}>
         <ResponsiveContainer>
           <LineChart data={data}>
-            <XAxis dataKey="date" />
-            <YAxis />
+            <XAxis dataKey="date" stroke="#8B98A5" />
+            <YAxis stroke="#8B98A5" />
             <Tooltip />
-            <Line type="monotone" dataKey="pph" stroke="#00c2ff" />
+            <Line
+              type="monotone"
+              dataKey="pph"
+              stroke="#4DA3FF"
+              strokeWidth={2}
+              dot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
